@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Pixel Art Multijugador - Gatos</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: monospace;
+        }
+
+        /* Contenedor relativo que envuelve el juego y el chat */
+        #game-wrapper {
+            position: relative;
+            width: 800px;
+            height: 600px;
+        }
+
+        #game-container canvas {
+            image-rendering: pixelated; 
+        }
+
+        /* Barra de chat superpuesta en la parte inferior al estilo Club Penguin */
+        #chat-container {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            z-index: 10;
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 10px 15px;
+            font-size: 14px;
+            border: 2px solid #ffffff;
+            border-radius: 20px;
+            background-color: rgba(44, 62, 80, 0.9);
+            color: #ffffff;
+            outline: none;
+            font-family: inherit;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+        }
+
+        #chat-input::placeholder {
+            color: #bdc3c7;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="game-wrapper">
+        <div id="game-container"></div>
+        <div id="chat-container">
+            <input type="text" id="chat-input" placeholder="Escribe un mensaje y presiona Enter para hablar..." maxlength="40" autocomplete="off" />
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            parent: 'game-container',
+            pixelArt: true,
+            physics: {
+                default: 'arcade',
+                arcade: { debug: false }
+            },
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        const game = new Phaser.Game(config);
+
+        let socket;
+        let player;
+        let targetPoint;
+        const otherPlayers = {};
+        const SPEED = 200;
+
+        function preload() {
+            // Sprite del GATO en Pixel Art
+            const g = this.make.graphics({ x: 0, y: 0, add: false });
+            
+            // Orejas
+            g.fillStyle(0xee5253); g.fillRect(6, 2, 6, 6); g.fillRect(20, 2, 6, 6);
+            g.fillStyle(0xffbe76); g.fillRect(8, 4, 2, 4); g.fillRect(22, 4, 2, 4);
+            // Cuerpo y Cabeza
+            g.fillStyle(0xff9f43); g.fillRect(4, 8, 24, 22);
+            // Barriga
+            g.fillStyle(0xfff200); g.fillRect(10, 18, 12, 10);
+            // Ojos
+            g.fillStyle(0x10ac84); g.fillRect(8, 11, 4, 4); g.fillRect(20, 11, 4, 4);
+            g.fillStyle(0x000000); g.fillRect(10, 12, 2, 3); g.fillRect(20, 12, 2, 3);
+            // Hocico y Nariz
+            g.fillStyle(0xffffff); g.fillRect(12, 15, 8, 4);
+            g.fillStyle(0xee5253); g.fillRect(15, 14, 2, 2);
+            // Bigotes
+            g.fillStyle(0x222222);
+            g.fillRect(2, 15, 4, 1); g.fillRect(2, 17, 4, 1);
+            g.fillRect(26, 15, 4, 1); g.fillRect(26, 17, 4, 1);
+            // Cola
+            g.fillStyle(0xff9f43); g.fillRect(26, 20, 4, 8); g.fillRect(28, 18, 4, 4);
+
+            g.generateTexture('cat', 32, 32);
+        }
+
+        function create() {
+            const self = this;
+            this.cameras.main.setBackgroundColor('#2c3e50');
+
+            socket = io();
+
+            socket.on('currentPlayers', (players) => {
+                Object.keys(players).forEach((id) => {
+                    if (players[id].playerId === socket.id) {
+                        addLocalPlayer(self, players[id]);
+                    } else {
+                        addOtherPlayer(self, players[id]);
+                    }
+                });
+            });
+
+            socket.on('newPlayer', (playerInfo) => {
+                addOtherPlayer(self, playerInfo);
+            });
+
+            socket.on('playerMoved', (playerInfo) => {
+                if (otherPlayers[playerInfo.playerId]) {
+                    const otherCat = otherPlayers[playerInfo.playerId];
+                    otherCat.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
+                    self.physics.moveToObject(otherCat, otherCat.targetPoint, SPEED);
+                }
+            });
+
+            socket.on('disconnectPlayer', (playerId) => {
+                if (otherPlayers[playerId]) {
+                    if (otherPlayers[playerId].chatBubble) {
+                        otherPlayers[playerId].chatBubble.destroy();
+                    }
+                    otherPlayers[playerId].destroy();
+                    delete otherPlayers[playerId];
+                }
+            });
+
+            // Escuchar mensajes de chat
+            socket.on('chatMessage', (data) => {
+                showSpeechBubble(self, data.id, data.text);
+            });
+
+            // Mover gato con clics
+            this.input.on('pointerdown', (pointer) => {
+                if (player) {
+                    targetPoint.x = pointer.x;
+                    targetPoint.y = pointer.y;
+                    self.physics.moveToObject(player, targetPoint, SPEED);
+
+                    socket.emit('playerMovement', { x: pointer.x, y: pointer.y });
+                }
+            });
+
+            // Enviar mensaje de chat
+            const chatInput = document.getElementById('chat-input');
+            chatInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    const message = chatInput.value.trim();
+                    if (message.length > 0) {
+                        socket.emit('chatMessage', message);
+                        chatInput.value = '';
+                        chatInput.blur();
+                    }
+                }
+            });
+        }
+
+        function update() {
+            if (player && targetPoint) {
+                const distance = Phaser.Math.Distance.Between(player.x, player.y, targetPoint.x, targetPoint.y);
+                if (distance < 4) {
+                    player.body.reset(targetPoint.x, targetPoint.y);
+                }
+                if (player.chatBubble) {
+                    player.chatBubble.setPosition(player.x, player.y - 50);
+                }
+            }
+
+            Object.keys(otherPlayers).forEach((id) => {
+                const otherCat = otherPlayers[id];
+                if (otherCat.targetPoint) {
+                    const dist = Phaser.Math.Distance.Between(otherCat.x, otherCat.y, otherCat.targetPoint.x, otherCat.targetPoint.y);
+                    if (dist < 4) {
+                        otherCat.body.reset(otherCat.targetPoint.x, otherCat.targetPoint.y);
+                    }
+                }
+                if (otherCat.chatBubble) {
+                    otherCat.chatBubble.setPosition(otherCat.x, otherCat.y - 50);
+                }
+            });
+        }
+
+        function addLocalPlayer(scene, playerInfo) {
+            player = scene.physics.add.sprite(playerInfo.x, playerInfo.y, 'cat');
+            player.setScale(2.5);
+            player.setCollideWorldBounds(true);
+            targetPoint = new Phaser.Math.Vector2(player.x, player.y);
+        }
+
+        function addOtherPlayer(scene, playerInfo) {
+            const otherPlayer = scene.physics.add.sprite(playerInfo.x, playerInfo.y, 'cat');
+            otherPlayer.setScale(2.5);
+            otherPlayer.setTint(0xdcdde1);
+            otherPlayer.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
+            otherPlayers[playerInfo.playerId] = otherPlayer;
+        }
+
+        function showSpeechBubble(scene, playerId, text) {
+            const cat = (playerId === socket.id) ? player : otherPlayers[playerId];
+            if (!cat) return;
+
+            if (cat.chatBubble) {
+                cat.chatBubble.destroy();
+            }
+
+            const bubbleContainer = scene.add.container(cat.x, cat.y - 50);
+
+            const msgText = scene.add.text(0, 0, text, {
+                fontSize: '13px',
+                fill: '#000000',
+                fontFamily: 'monospace',
+                align: 'center'
+            }).setOrigin(0.5, 0.5);
+
+            const padding = 8;
+            const w = msgText.width + padding * 2;
+            const h = msgText.height + padding * 2;
+
+            const bg = scene.add.graphics();
+            bg.fillStyle(0xffffff, 0.95);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 6);
+            bg.lineStyle(2, 0x2c3e50, 1);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 6);
+
+            bubbleContainer.add([bg, msgText]);
+            cat.chatBubble = bubbleContainer;
+
+            scene.time.delayedCall(4500, () => {
+                if (cat.chatBubble === bubbleContainer) {
+                    bubbleContainer.destroy();
+                    cat.chatBubble = null;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

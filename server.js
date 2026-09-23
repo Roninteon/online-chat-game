@@ -13,16 +13,21 @@ app.use(express.static(__dirname));
 const players = {};
 
 io.on('connection', (socket) => {
-    console.log('¡Nuevo gato conectado! ID:', socket.id);
+    console.log('¡Nueva persona conectada! ID:', socket.id);
 
-    players[socket.id] = {
-        x: Math.floor(Math.random() * 600) + 100,
-        y: Math.floor(Math.random() * 400) + 100,
-        playerId: socket.id
-    };
+    socket.on('joinRoom', (userData) => {
+        players[socket.id] = {
+            x: Math.floor(Math.random() * 500) + 150,
+            y: Math.floor(Math.random() * 200) + 250,
+            playerId: socket.id,
+            name: userData.name || 'Granjero',
+            color: userData.color || 'blue',
+            isTyping: false
+        };
 
-    socket.emit('currentPlayers', players);
-    socket.broadcast.emit('newPlayer', players[socket.id]);
+        socket.emit('currentPlayers', players);
+        socket.broadcast.emit('newPlayer', players[socket.id]);
+    });
 
     socket.on('playerMovement', (movementData) => {
         if (players[socket.id]) {
@@ -32,17 +37,33 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- NUEVO: Escuchar y transmitir mensajes del chat ---
     socket.on('chatMessage', (message) => {
-        // Enviar el mensaje a TODOS los jugadores (incluyendo al emisor)
         io.emit('chatMessage', {
             id: socket.id,
             text: message
         });
     });
 
+    socket.on('emoteMessage', (emote) => {
+        io.emit('emoteMessage', {
+            id: socket.id,
+            emote: emote
+        });
+    });
+
+    // --- NUEVO: Sincronizar estado de "Escribiendo..." ---
+    socket.on('typingState', (isTyping) => {
+        if (players[socket.id]) {
+            players[socket.id].isTyping = isTyping;
+            socket.broadcast.emit('playerTyping', {
+                id: socket.id,
+                isTyping: isTyping
+            });
+        }
+    });
+
     socket.on('disconnect', () => {
-        console.log('Gato desconectado ID:', socket.id);
+        console.log('Jugador desconectado ID:', socket.id);
         delete players[socket.id];
         io.emit('disconnectPlayer', socket.id);
     });
@@ -50,5 +71,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor multijugador corriendo en el puerto ${PORT}`);
+    console.log(`Servidor de la sala corriendo en el puerto ${PORT}`);
 });

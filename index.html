@@ -3,75 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego Pixel Art Multijugador - Gatos</title>
+    <title>Cabaña Pura Vida - Lofi Rain & Chill</title>
+    <!-- FUENTE RETRO PIXEL ART -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
+        * {
+            font-family: 'Silkscreen', cursive, monospace;
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
+            background-color: #05070a;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: monospace;
         }
 
-        /* Contenedor relativo que envuelve el juego y el chat */
         #game-wrapper {
             position: relative;
-            width: 800px;
-            height: 600px;
+            width: 1000px;
+            height: 700px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.95);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 6px solid #2b1a0d;
         }
 
         #game-container canvas {
             image-rendering: pixelated; 
         }
 
-        /* Barra de chat superpuesta en la parte inferior al estilo Club Penguin */
-        #chat-container {
+        /* OVERLAY DE LOGIN */
+        #login-overlay {
             position: absolute;
-            bottom: 15px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8, 12, 10, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #ffffff;
+        }
+
+        .login-box {
+            background: #2b1d14;
+            padding: 35px;
+            border-radius: 14px;
+            border: 4px solid #b87333;
+            box-shadow: inset 0 0 20px #000000, 0 12px 30px rgba(0,0,0,0.85);
+            text-align: center;
+            width: 380px;
+        }
+
+        .login-box h2 {
+            margin-top: 0;
+            color: #2ecc71;
+            font-size: 20px;
+            text-shadow: 2px 2px #000;
+            margin-bottom: 22px;
+        }
+
+        .login-box label {
+            display: block;
+            text-align: left;
+            font-size: 10px;
+            color: #d5b895;
+            margin: 6px 0 2px 2px;
+        }
+
+        .login-box input, .login-box select, .login-box button {
+            width: 100%;
+            padding: 12px;
+            margin: 4px 0 10px 0;
+            border-radius: 6px;
+            border: 2px solid #5c3a21;
+            background: #140d08;
+            color: #f1c40f;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .login-box button {
+            background: #27ae60;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #2ecc71;
+            transition: 0.2s;
+            margin-top: 15px;
+        }
+
+        .login-box button:hover {
+            background: #2ecc71;
+            color: #140d08;
+        }
+
+        /* BARRA INFERIOR - MEJORADA CON ESTILO RETRO BLOCK */
+        #ui-bar {
+            position: absolute;
+            bottom: 14px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            z-index: 10;
+            width: 96%;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 999;
         }
 
         #chat-input {
-            width: 100%;
-            padding: 10px 15px;
-            font-size: 14px;
-            border: 2px solid #ffffff;
-            border-radius: 20px;
-            background-color: rgba(44, 62, 80, 0.9);
+            flex: 1;
+            padding: 12px 18px;
+            font-size: 11px;
+            border: 3px solid #b87333;
+            border-radius: 8px;
+            background-color: rgba(20, 13, 8, 0.95);
             color: #ffffff;
             outline: none;
-            font-family: inherit;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            box-sizing: border-box;
+            box-shadow: 4px 4px 0px #000000;
         }
 
-        #chat-input::placeholder {
-            color: #bdc3c7;
+        .emote-btn, .tool-btn {
+            background: #140d08;
+            border: 3px solid #b87333;
+            border-radius: 8px;
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, background 0.2s, box-shadow 0.1s;
+            box-shadow: 4px 4px 0px #000000;
+            color: #fff;
+        }
+
+        .emote-btn:hover, .tool-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #000000;
+            background: #d35400;
+        }
+
+        .emote-btn:active, .tool-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+
+        /* HISTORIAL DE CHAT */
+        #chat-history-box {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 280px; height: 220px;
+            background: rgba(20, 13, 8, 0.94);
+            border: 3px solid #b87333;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            z-index: 998;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.9);
+        }
+
+        #chat-history-header {
+            font-size: 11px; color: #f1c40f;
+            border-bottom: 2px solid #5c3a21;
+            padding-bottom: 4px; margin-bottom: 6px;
+            display: flex; justify-content: space-between;
+        }
+
+        #chat-history-list {
+            flex: 1; overflow-y: auto;
+            font-size: 10px; color: #e0e0e0;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+
+        #chat-history-list div {
+            word-break: break-word;
+            line-height: 1.3;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
+
     <div id="game-wrapper">
+        <div id="login-overlay">
+            <div class="login-box">
+                <h2>🇨🇷 Cabaña Pura Vida</h2>
+                <label>Tu Nombre:</label>
+                <input type="text" id="username-input" placeholder="Ej. Ronald" maxlength="12" autocomplete="off">
+                
+                <label>Color de Túnica:</label>
+                <select id="color-select">
+                    <option value="purple">Túnica Morada</option>
+                    <option value="blue">Túnica Azul</option>
+                    <option value="red">Túnica Roja</option>
+                    <option value="green">Túnica Verde</option>
+                    <option value="yellow">Túnica Dorada</option>
+                </select>
+
+                <button id="start-btn">Entrar a la Cabaña</button>
+            </div>
+        </div>
+
         <div id="game-container"></div>
-        <div id="chat-container">
-            <input type="text" id="chat-input" placeholder="Escribe un mensaje y presiona Enter para hablar..." maxlength="40" autocomplete="off" />
+
+        <div id="chat-history-box">
+            <div id="chat-history-header">
+                <span>Historial de Chat</span>
+                <span style="cursor:pointer;" onclick="toggleHistory()">✖</span>
+            </div>
+            <div id="chat-history-list"></div>
+        </div>
+
+        <div id="ui-bar" style="display: none;">
+            <input type="text" id="chat-input" placeholder="ESCRIBE UN MENSAJE..." maxlength="40" autocomplete="off" />
+            <button class="emote-btn" onclick="sendEmote('😀')">😀</button>
+            <button class="emote-btn" onclick="sendEmote('😂')">😂</button>
+            <button class="emote-btn" onclick="sendEmote('😎')">😎</button>
+            <button class="emote-btn" onclick="sendEmote('😮')">😮</button>
+            <button class="emote-btn" onclick="sendEmote('😡')">😡</button>
+            <button class="emote-btn" onclick="sendEmote('😢')">😢</button>
+            <button class="emote-btn" onclick="sendEmote('❤️')">❤️</button>
+            <button class="tool-btn" onclick="toggleHistory()" title="Historial">📜</button>
+            <button class="tool-btn" id="audio-toggle-btn" onclick="toggleAudio()" title="Sonido de Lluvia">🌧️</button>
         </div>
     </div>
 
     <script>
         const config = {
             type: Phaser.AUTO,
-            width: 800,
-            height: 600,
+            width: 1000,
+            height: 700,
             parent: 'game-container',
             pixelArt: true,
             physics: {
@@ -91,183 +264,968 @@
 
         const game = new Phaser.Game(config);
 
-        let socket;
-        let player;
-        let targetPoint;
+        let socket = null;
+        let player = null;
+        let targetPoint = null;
         const otherPlayers = {};
-        const SPEED = 200;
+        const SPEED = 180;
+        
+        let dustParticles = [];
+        let footstepDusts = [];
+        let fireGlowGraphics;
+        let lanternGlowGraphics;
+        let clockPendulumContainer;
+        let rainWindowGraphics;
+        let windowJungleContainer;
+        let fireSparksGraphics;
+        let coffeeSteamGraphics;
+        let slothArmGraphics;
+        let slothEyeGraphics;
+
+        let nextDustTime = 0;
+        let audioContext = null;
+        let rainNoiseNode = null;
+        let isAudioPlaying = false;
+
+        let rainParticles = [];
+        let fireSparks = [];
+        let coffeeSteam = [];
+
+        const COLOR_MAP = {
+            purple: { base: 0x8e44ad, shadow: 0x6c3483 },
+            blue:   { base: 0x2980b9, shadow: 0x1f618d },
+            red:    { base: 0xc0392b, shadow: 0x922b21 },
+            green:  { base: 0x27ae60, shadow: 0x1e8449 },
+            yellow: { base: 0xf39c12, shadow: 0xb9770e }
+        };
 
         function preload() {
-            // Sprite del GATO en Pixel Art
-            const g = this.make.graphics({ x: 0, y: 0, add: false });
-            
-            // Orejas
-            g.fillStyle(0xee5253); g.fillRect(6, 2, 6, 6); g.fillRect(20, 2, 6, 6);
-            g.fillStyle(0xffbe76); g.fillRect(8, 4, 2, 4); g.fillRect(22, 4, 2, 4);
-            // Cuerpo y Cabeza
-            g.fillStyle(0xff9f43); g.fillRect(4, 8, 24, 22);
-            // Barriga
-            g.fillStyle(0xfff200); g.fillRect(10, 18, 12, 10);
-            // Ojos
-            g.fillStyle(0x10ac84); g.fillRect(8, 11, 4, 4); g.fillRect(20, 11, 4, 4);
-            g.fillStyle(0x000000); g.fillRect(10, 12, 2, 3); g.fillRect(20, 12, 2, 3);
-            // Hocico y Nariz
-            g.fillStyle(0xffffff); g.fillRect(12, 15, 8, 4);
-            g.fillStyle(0xee5253); g.fillRect(15, 14, 2, 2);
-            // Bigotes
-            g.fillStyle(0x222222);
-            g.fillRect(2, 15, 4, 1); g.fillRect(2, 17, 4, 1);
-            g.fillRect(26, 15, 4, 1); g.fillRect(26, 17, 4, 1);
-            // Cola
-            g.fillStyle(0xff9f43); g.fillRect(26, 20, 4, 8); g.fillRect(28, 18, 4, 4);
+            Object.keys(COLOR_MAP).forEach(colorKey => {
+                const g = this.make.graphics({ x: 0, y: 0, add: false });
+                const colors = COLOR_MAP[colorKey];
+                
+                // Pelo
+                g.fillStyle(0x4a235a); g.fillRect(10, 2, 12, 6);
+                
+                // Piel
+                g.fillStyle(0xffdbac); g.fillRect(10, 7, 12, 9);
+                g.fillStyle(0xe0ac69); g.fillRect(10, 14, 12, 2);
+                g.fillStyle(0x2c3e50); g.fillRect(12, 10, 2, 3); g.fillRect(18, 10, 2, 3);
+                
+                // Túnica
+                g.fillStyle(colors.base); g.fillRect(8, 16, 16, 10);
+                g.fillStyle(colors.shadow); g.fillRect(18, 16, 6, 10); g.fillRect(8, 24, 16, 2);
+                
+                // Pantalones y Botas
+                g.fillStyle(0x2c3e50); g.fillRect(10, 26, 12, 5);
+                g.fillStyle(0x1a100b); g.fillRect(9, 29, 5, 3); g.fillRect(18, 29, 5, 3);
 
-            g.generateTexture('cat', 32, 32);
+                g.generateTexture(`human_${colorKey}`, 32, 32);
+            });
+
+            // Sombra ovalada
+            const shG = this.make.graphics({ x: 0, y: 0, add: false });
+            shG.fillStyle(0x000000, 0.38);
+            shG.fillEllipse(18, 9, 18, 7);
+            shG.generateTexture('avatar_shadow', 36, 18);
         }
 
         function create() {
             const self = this;
-            this.cameras.main.setBackgroundColor('#2c3e50');
 
-            socket = io();
-
-            socket.on('currentPlayers', (players) => {
-                Object.keys(players).forEach((id) => {
-                    if (players[id].playerId === socket.id) {
-                        addLocalPlayer(self, players[id]);
-                    } else {
-                        addOtherPlayer(self, players[id]);
-                    }
+            // Gotas de Lluvia
+            for (let i = 0; i < 40; i++) {
+                rainParticles.push({
+                    x: Phaser.Math.Between(170, 370),
+                    y: Phaser.Math.Between(22, 127),
+                    length: Phaser.Math.Between(8, 16),
+                    speed: Phaser.Math.FloatBetween(2.8, 5.0)
                 });
+            }
+
+            // Chispas Chimenea
+            for (let i = 0; i < 14; i++) {
+                fireSparks.push({
+                    x: 500 + Phaser.Math.Between(-14, 14),
+                    y: 95,
+                    vy: Phaser.Math.FloatBetween(0.5, 1.1),
+                    vx: Phaser.Math.FloatBetween(-0.3, 0.3),
+                    alpha: Phaser.Math.FloatBetween(0.5, 1.0),
+                    size: Phaser.Math.Between(1, 3)
+                });
+            }
+
+            // Vapor Café
+            for (let i = 0; i < 6; i++) {
+                coffeeSteam.push({
+                    x: 658,
+                    y: 360 - (i * 5),
+                    alpha: 1 - (i * 0.16),
+                    seed: Math.random() * 50
+                });
+            }
+
+            drawCostaRicaCabin(this);
+
+            // EVENTOS DE ENTRADA / LOGIN
+            const startBtn = document.getElementById('start-btn');
+            const usernameInput = document.getElementById('username-input');
+
+            const handleLogin = () => {
+                if (socket) return;
+                const name = usernameInput.value.trim() || 'Tico';
+                const color = document.getElementById('color-select').value;
+                
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('ui-bar').style.display = 'flex';
+
+                socket = io();
+                setupSocketListeners(self);
+                socket.emit('joinRoom', { name, color });
+                initRainAudio();
+            };
+
+            startBtn.addEventListener('click', handleLogin);
+            usernameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
             });
 
-            socket.on('newPlayer', (playerInfo) => {
-                addOtherPlayer(self, playerInfo);
-            });
-
-            socket.on('playerMoved', (playerInfo) => {
-                if (otherPlayers[playerInfo.playerId]) {
-                    const otherCat = otherPlayers[playerInfo.playerId];
-                    otherCat.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
-                    self.physics.moveToObject(otherCat, otherCat.targetPoint, SPEED);
-                }
-            });
-
-            socket.on('disconnectPlayer', (playerId) => {
-                if (otherPlayers[playerId]) {
-                    if (otherPlayers[playerId].chatBubble) {
-                        otherPlayers[playerId].chatBubble.destroy();
-                    }
-                    otherPlayers[playerId].destroy();
-                    delete otherPlayers[playerId];
-                }
-            });
-
-            // Escuchar mensajes de chat
-            socket.on('chatMessage', (data) => {
-                showSpeechBubble(self, data.id, data.text);
-            });
-
-            // Mover gato con clics
+            // CLIC Y MECÁNICA PARA SENTARSE
             this.input.on('pointerdown', (pointer) => {
-                if (player) {
-                    targetPoint.x = pointer.x;
-                    targetPoint.y = pointer.y;
-                    self.physics.moveToObject(player, targetPoint, SPEED);
+                if (pointer.y > 620 || pointer.y < 140) return;
 
-                    socket.emit('playerMovement', { x: pointer.x, y: pointer.y });
+                if (player && targetPoint) {
+                    let targetX = pointer.x;
+                    let targetY = pointer.y;
+
+                    if (pointer.x >= 200 && pointer.x <= 500 && pointer.y >= 320 && pointer.y <= 440) {
+                        if (pointer.x < 290) targetX = 250;
+                        else if (pointer.x < 390) targetX = 350;
+                        else targetX = 450;
+                        
+                        targetY = 375;
+                    }
+
+                    targetPoint.x = targetX;
+                    targetPoint.y = targetY;
+                    self.physics.moveToObject(player, targetPoint, SPEED);
+                    socket.emit('playerMovement', { x: targetX, y: targetY });
+                    player.setScale(2.6, 2.0);
                 }
             });
 
-            // Enviar mensaje de chat
             const chatInput = document.getElementById('chat-input');
-            chatInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    const message = chatInput.value.trim();
-                    if (message.length > 0) {
-                        socket.emit('chatMessage', message);
+            
+            chatInput.addEventListener('focus', () => {
+                if (socket) socket.emit('typingState', true);
+                if (socket) setTypingIndicator(self, socket.id, true);
+            });
+
+            chatInput.addEventListener('blur', () => {
+                if (socket) socket.emit('typingState', false);
+                if (socket) setTypingIndicator(self, socket.id, false);
+            });
+
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const msg = chatInput.value.trim();
+                    if (msg.length > 0 && socket) {
+                        socket.emit('chatMessage', msg);
                         chatInput.value = '';
                         chatInput.blur();
                     }
                 }
             });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const box = document.getElementById('chat-history-box');
+                    if (box.style.display === 'flex') box.style.display = 'none';
+                }
+            });
+
+            createDustParticles(this);
+        }
+
+        function setupSocketListeners(scene) {
+            socket.on('currentPlayers', (players) => {
+                Object.keys(players).forEach((id) => {
+                    if (players[id].playerId === socket.id) {
+                        addLocalPlayer(scene, players[id]);
+                    } else {
+                        addOtherPlayer(scene, players[id]);
+                    }
+                });
+            });
+
+            socket.on('newPlayer', (playerInfo) => {
+                addOtherPlayer(scene, playerInfo);
+            });
+
+            socket.on('playerMoved', (playerInfo) => {
+                if (otherPlayers[playerInfo.playerId]) {
+                    const other = otherPlayers[playerInfo.playerId];
+                    other.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
+                    scene.physics.moveToObject(other, other.targetPoint, SPEED);
+                }
+            });
+
+            socket.on('disconnectPlayer', (playerId) => {
+                if (otherPlayers[playerId]) {
+                    removeCharacterBubbles(otherPlayers[playerId]);
+                    if (otherPlayers[playerId].nameTag) otherPlayers[playerId].nameTag.destroy();
+                    if (otherPlayers[playerId].shadow) otherPlayers[playerId].shadow.destroy();
+                    otherPlayers[playerId].destroy();
+                    delete otherPlayers[playerId];
+                }
+            });
+
+            socket.on('chatMessage', (data) => {
+                showSpeechBubble(scene, data.id, data.text);
+                addHistoryLog(data.name || 'Jugador', data.text);
+            });
+
+            socket.on('emoteMessage', (data) => {
+                showEmoteBubble(scene, data.id, data.emote);
+                addHistoryLog(data.name || 'Jugador', data.emote);
+            });
+
+            socket.on('playerTyping', (data) => {
+                setTypingIndicator(scene, data.id, data.isTyping);
+            });
         }
 
         function update() {
+            const time = this.time.now;
+            const winX = 170, winY = 22, winW = 200, winH = 105;
+
+            // 1. LLUVIA ANIMADA
+            if (rainWindowGraphics) {
+                rainWindowGraphics.clear();
+                rainWindowGraphics.lineStyle(1.5, 0xdfe6e9, 0.65);
+                rainParticles.forEach(p => {
+                    p.y += p.speed;
+                    p.x -= p.speed * 0.25;
+                    if (p.y > winY + winH) {
+                        p.y = winY;
+                        p.x = Phaser.Math.Between(winX, winX + winW + 20);
+                    }
+                    rainWindowGraphics.lineBetween(p.x, p.y, p.x - (p.length * 0.2), p.y + p.length);
+                });
+            }
+
+            // 2. SELVA TROPICAL
+            if (windowJungleContainer) {
+                const sway1 = Math.sin(time / 600) * 3;
+                const sway2 = Math.cos(time / 500) * 2.5;
+                if (windowJungleContainer.leaf1) windowJungleContainer.leaf1.x = winX + 30 + sway1;
+                if (windowJungleContainer.leaf2) windowJungleContainer.leaf2.x = winX + 170 + sway2;
+                if (windowJungleContainer.leaf3) windowJungleContainer.leaf3.x = winX + 100 + sway1 * 0.5;
+            }
+
+            // 3. CHISPAS CHIMENEA
+            if (fireSparksGraphics) {
+                fireSparksGraphics.clear();
+                fireSparks.forEach(s => {
+                    s.y -= s.vy;
+                    s.x += s.vx + Math.sin(time / 140) * 0.3;
+                    s.alpha -= 0.012;
+                    if (s.alpha <= 0 || s.y < 55) {
+                        s.x = 500 + Phaser.Math.Between(-14, 14);
+                        s.y = 95;
+                        s.alpha = 1;
+                        s.vy = Phaser.Math.FloatBetween(0.5, 1.1);
+                    }
+                    fireSparksGraphics.fillStyle(0xffa500, s.alpha);
+                    fireSparksGraphics.fillRect(s.x, s.y, s.size, s.size);
+                });
+            }
+
+            // 4. VAPOR CAFÉ
+            if (coffeeSteamGraphics) {
+                coffeeSteamGraphics.clear();
+                coffeeSteam.forEach(p => {
+                    p.y -= 0.25;
+                    p.x = 658 + Math.sin((time / 180) + p.seed) * 3.0;
+                    p.alpha -= 0.01;
+                    if (p.alpha <= 0 || p.y < 320) {
+                        p.y = 360;
+                        p.x = 658;
+                        p.alpha = 0.85;
+                    }
+                    coffeeSteamGraphics.fillStyle(0xffffff, p.alpha * 0.4);
+                    coffeeSteamGraphics.fillCircle(p.x, p.y, 2.0);
+                });
+            }
+
+            // 5. PEREZOSO ANIMADO
+            if (slothArmGraphics && slothEyeGraphics) {
+                const blink = Math.sin(time / 900) > 0.95;
+                const armMove = Math.sin(time / 500) * 1.5;
+                slothArmGraphics.y = armMove;
+                slothEyeGraphics.clear();
+                slothEyeGraphics.fillStyle(blink ? 0x8d5b28 : 0x000000);
+                slothEyeGraphics.fillRect(604, 70, 2, 2);
+                slothEyeGraphics.fillRect(613, 70, 2, 2);
+            }
+
+            // 6. LUZ Y PARPADEOS (Con soporte para Additive Blend)
+            if (fireGlowGraphics) {
+                fireGlowGraphics.alpha = 0.4 + Math.sin(time / 80) * 0.12 + (Math.random() * 0.04);
+            }
+
+            if (lanternGlowGraphics) {
+                lanternGlowGraphics.alpha = 0.35 + Math.sin(time / 90) * 0.08;
+            }
+
+            // 7. RELOJ DE PÉNDULO
+            if (clockPendulumContainer) {
+                clockPendulumContainer.rotation = Math.sin(time / 220) * 0.25;
+            }
+
+            // MOVIMIENTO Y PROFUNDIDAD DEL JUGADOR
             if (player && targetPoint) {
-                const distance = Phaser.Math.Distance.Between(player.x, player.y, targetPoint.x, targetPoint.y);
-                if (distance < 4) {
+                const dist = Phaser.Math.Distance.Between(player.x, player.y, targetPoint.x, targetPoint.y);
+                
+                if (dist > 4) {
+                    player.angle = Math.sin(time / 50) * 5;
+                    player.scaleX = Phaser.Math.Linear(player.scaleX, 2.4, 0.15);
+                    player.scaleY = Phaser.Math.Linear(player.scaleY, 2.4, 0.15);
+                    player.setFlipX(targetPoint.x < player.x);
+
+                    if (time > nextDustTime) {
+                        spawnFootstepDust(this, player.x, player.y + 28);
+                        nextDustTime = time + 130;
+                    }
+                } else {
+                    if (player.body.speed > 0) {
+                        player.setScale(2.1, 2.6);
+                    }
                     player.body.reset(targetPoint.x, targetPoint.y);
+                    player.angle = 0;
+
+                    if (player.y === 375 && player.x >= 240 && player.x <= 460) {
+                        player.scaleX = 2.4;
+                        player.scaleY = 2.0;
+                    } else {
+                        player.scaleX = Phaser.Math.Linear(player.scaleX, 2.4, 0.1);
+                        player.scaleY = Phaser.Math.Linear(player.scaleY, 2.4 + Math.sin(time / 250) * 0.06, 0.1);
+                    }
                 }
-                if (player.chatBubble) {
-                    player.chatBubble.setPosition(player.x, player.y - 50);
+
+                player.depth = player.y;
+                if (player.shadow) { player.shadow.setPosition(player.x, player.y + 28); player.shadow.depth = player.y - 1; }
+                if (player.nameTag) { player.nameTag.setPosition(player.x, player.y + 36); player.nameTag.depth = player.y + 1000; }
+                if (player.chatBubble) { player.chatBubble.setPosition(player.x, player.y - 50); player.chatBubble.depth = 9999; }
+                if (player.typingBubble) { 
+                    player.typingBubble.setPosition(player.x, player.y - 50); 
+                    player.typingBubble.depth = 9998; 
+                    animateTypingDots(player.typingBubble, time);
                 }
             }
 
+            // OTROS JUGADORES
             Object.keys(otherPlayers).forEach((id) => {
-                const otherCat = otherPlayers[id];
-                if (otherCat.targetPoint) {
-                    const dist = Phaser.Math.Distance.Between(otherCat.x, otherCat.y, otherCat.targetPoint.x, otherCat.targetPoint.y);
-                    if (dist < 4) {
-                        otherCat.body.reset(otherCat.targetPoint.x, otherCat.targetPoint.y);
+                const other = otherPlayers[id];
+                if (other.targetPoint) {
+                    const dist = Phaser.Math.Distance.Between(other.x, other.y, other.targetPoint.x, other.targetPoint.y);
+                    if (dist > 4) {
+                        other.angle = Math.sin(time / 50) * 5;
+                        other.setScale(2.4, 2.4);
+                        other.setFlipX(other.targetPoint.x < other.x);
+                    } else {
+                        other.body.reset(other.targetPoint.x, other.targetPoint.y);
+                        other.angle = 0;
+                        other.setScale(2.4, 2.4 + Math.sin(time / 250) * 0.06);
                     }
                 }
-                if (otherCat.chatBubble) {
-                    otherCat.chatBubble.setPosition(otherCat.x, otherCat.y - 50);
+
+                other.depth = other.y;
+                if (other.shadow) { other.shadow.setPosition(other.x, other.y + 28); other.shadow.depth = other.y - 1; }
+                if (other.nameTag) { other.nameTag.setPosition(other.x, other.y + 36); other.nameTag.depth = other.y + 1000; }
+                if (other.chatBubble) { other.chatBubble.setPosition(other.x, other.y - 50); other.chatBubble.depth = 9999; }
+                if (other.typingBubble) { 
+                    other.typingBubble.setPosition(other.x, other.y - 50); 
+                    other.typingBubble.depth = 9998; 
+                    animateTypingDots(other.typingBubble, time);
                 }
             });
+
+            // POLVO AMBIENTAL
+            dustParticles.forEach(p => {
+                p.y -= p.speedY;
+                p.x += Math.sin(time / 500 + p.seed) * 0.35;
+                if (p.y < 130) p.y = 670;
+
+                let inSunbeam = false;
+                if (p.y >= 120 && p.y <= 480) {
+                    const progress = (p.y - 120) / (480 - 120);
+                    const minX = 180 + 30 * progress;
+                    const maxX = 320 + 180 * progress;
+                    if (p.x >= minX && p.x <= maxX) {
+                        inSunbeam = true;
+                    }
+                }
+
+                p.gfx.clear();
+                if (inSunbeam) {
+                    p.gfx.fillStyle(0xfffbe6, 0.92);
+                    p.gfx.fillCircle(p.x, p.y, p.baseSize * 1.5);
+                } else {
+                    p.gfx.fillStyle(0xffeaa7, 0.35);
+                    p.gfx.fillCircle(p.x, p.y, p.baseSize);
+                }
+            });
+
+            for (let i = footstepDusts.length - 1; i >= 0; i--) {
+                const p = footstepDusts[i];
+                p.alpha -= 0.04;
+                p.scale += 0.03;
+                if (p.alpha <= 0) {
+                    p.destroy();
+                    footstepDusts.splice(i, 1);
+                }
+            }
         }
 
         function addLocalPlayer(scene, playerInfo) {
-            player = scene.physics.add.sprite(playerInfo.x, playerInfo.y, 'cat');
-            player.setScale(2.5);
+            player = scene.physics.add.sprite(playerInfo.x, playerInfo.y, `human_${playerInfo.color}`);
+            player.setScale(2.4);
             player.setCollideWorldBounds(true);
             targetPoint = new Phaser.Math.Vector2(player.x, player.y);
+
+            player.shadow = scene.add.image(player.x, player.y + 28, 'avatar_shadow');
+
+            player.nameTag = scene.add.text(player.x, player.y + 36, playerInfo.name, {
+                fontSize: '11px', fill: '#f1c40f', backgroundColor: '#140d0bdd',
+                padding: { x: 6, y: 3 }, fontFamily: 'Silkscreen'
+            }).setOrigin(0.5, 0.5);
         }
 
         function addOtherPlayer(scene, playerInfo) {
-            const otherPlayer = scene.physics.add.sprite(playerInfo.x, playerInfo.y, 'cat');
-            otherPlayer.setScale(2.5);
-            otherPlayer.setTint(0xdcdde1);
-            otherPlayer.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
-            otherPlayers[playerInfo.playerId] = otherPlayer;
+            const other = scene.physics.add.sprite(playerInfo.x, playerInfo.y, `human_${playerInfo.color}`);
+            other.setScale(2.4);
+            other.targetPoint = new Phaser.Math.Vector2(playerInfo.x, playerInfo.y);
+
+            other.shadow = scene.add.image(playerInfo.x, playerInfo.y + 28, 'avatar_shadow');
+
+            other.nameTag = scene.add.text(other.x, other.y + 36, playerInfo.name, {
+                fontSize: '11px', fill: '#ffffff', backgroundColor: '#140d0bdd',
+                padding: { x: 6, y: 3 }, fontFamily: 'Silkscreen'
+            }).setOrigin(0.5, 0.5);
+
+            otherPlayers[playerInfo.playerId] = other;
+        }
+
+        function sendEmote(symbol) {
+            if (socket) socket.emit('emoteMessage', symbol);
+        }
+
+        function spawnFootstepDust(scene, x, y) {
+            const dust = scene.add.graphics();
+            dust.fillStyle(0xd5b895, 0.7);
+            dust.fillCircle(0, 0, Phaser.Math.Between(3, 6));
+            dust.setPosition(x + Phaser.Math.Between(-7, 7), y);
+            dust.depth = y - 2;
+            footstepDusts.push(dust);
+        }
+
+        function setTypingIndicator(scene, playerId, isTyping) {
+            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            if (!char) return;
+
+            if (isTyping) {
+                if (!char.typingBubble && !char.chatBubble) {
+                    const bubbleContainer = scene.add.container(char.x, char.y - 50);
+                    
+                    const bg = scene.add.graphics();
+                    bg.fillStyle(0xfffdfa, 0.95);
+                    bg.fillRoundedRect(-18, -11, 36, 22, 6);
+                    bg.lineStyle(2, 0xb87333, 1);
+                    bg.strokeRoundedRect(-18, -11, 36, 22, 6);
+
+                    const dots = scene.add.text(0, -1, '...', {
+                        fontSize: '13px', fill: '#d35400', fontFamily: 'Silkscreen', fontWeight: 'bold'
+                    }).setOrigin(0.5, 0.5);
+
+                    bubbleContainer.add([bg, dots]);
+                    bubbleContainer.dotsText = dots;
+                    char.typingBubble = bubbleContainer;
+                }
+            } else {
+                if (char.typingBubble) {
+                    char.typingBubble.destroy();
+                    char.typingBubble = null;
+                }
+            }
+        }
+
+        function animateTypingDots(container, time) {
+            if (container && container.dotsText) {
+                const count = Math.floor((time / 300) % 3) + 1;
+                container.dotsText.setText('.'.repeat(count));
+            }
+        }
+
+        function removeCharacterBubbles(char) {
+            if (!char) return;
+            if (char.typingBubble) { char.typingBubble.destroy(); char.typingBubble = null; }
+            if (char.chatBubble) { char.chatBubble.destroy(); char.chatBubble = null; }
         }
 
         function showSpeechBubble(scene, playerId, text) {
-            const cat = (playerId === socket.id) ? player : otherPlayers[playerId];
-            if (!cat) return;
+            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            if (!char) return;
 
-            if (cat.chatBubble) {
-                cat.chatBubble.destroy();
-            }
+            removeCharacterBubbles(char);
 
-            const bubbleContainer = scene.add.container(cat.x, cat.y - 50);
-
+            const bubbleContainer = scene.add.container(char.x, char.y - 50);
             const msgText = scene.add.text(0, 0, text, {
-                fontSize: '13px',
-                fill: '#000000',
-                fontFamily: 'monospace',
-                align: 'center'
+                fontSize: '11px', fill: '#2c3e50', fontFamily: 'Silkscreen'
             }).setOrigin(0.5, 0.5);
 
-            const padding = 8;
-            const w = msgText.width + padding * 2;
-            const h = msgText.height + padding * 2;
+            const w = msgText.width + 18;
+            const h = msgText.height + 14;
 
             const bg = scene.add.graphics();
-            bg.fillStyle(0xffffff, 0.95);
+            bg.fillStyle(0xfffdfa, 0.98);
             bg.fillRoundedRect(-w / 2, -h / 2, w, h, 6);
-            bg.lineStyle(2, 0x2c3e50, 1);
+            bg.lineStyle(2, 0xb87333, 1);
             bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 6);
 
             bubbleContainer.add([bg, msgText]);
-            cat.chatBubble = bubbleContainer;
+            char.chatBubble = bubbleContainer;
 
             scene.time.delayedCall(4500, () => {
-                if (cat.chatBubble === bubbleContainer) {
+                if (char.chatBubble === bubbleContainer) {
                     bubbleContainer.destroy();
-                    cat.chatBubble = null;
+                    char.chatBubble = null;
                 }
             });
+        }
+
+        function showEmoteBubble(scene, playerId, emote) {
+            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            if (!char) return;
+
+            removeCharacterBubbles(char);
+
+            const bubbleContainer = scene.add.container(char.x, char.y - 50);
+            const emoteText = scene.add.text(0, 0, emote, { fontSize: '20px' }).setOrigin(0.5, 0.5);
+
+            const bg = scene.add.graphics();
+            bg.fillStyle(0xfffdfa, 0.98);
+            bg.fillCircle(0, 0, 20);
+            bg.lineStyle(2, 0xb87333, 1);
+            bg.strokeCircle(0, 0, 20);
+
+            bubbleContainer.add([bg, emoteText]);
+            char.chatBubble = bubbleContainer;
+
+            scene.time.delayedCall(3000, () => {
+                if (char.chatBubble === bubbleContainer) {
+                    bubbleContainer.destroy();
+                    char.chatBubble = null;
+                }
+            });
+        }
+
+        // --- DIBUJO DE CABAÑA Y MUEBLES 2.5D ---
+        function drawCostaRicaCabin(scene) {
+            const g = scene.add.graphics();
+
+            // 1. PARED DE TRONCOS
+            g.fillStyle(0x3a2012); g.fillRect(0, 0, 1000, 140);
+            for(let y = 0; y < 140; y += 18) {
+                g.fillStyle(0x4a2b18); g.fillRect(0, y + 2, 1000, 12);
+                g.fillStyle(0x27140a); g.fillRect(0, y, 1000, 2);
+                g.fillStyle(0x5c361e); g.fillRect(0, y + 4, 1000, 2);
+            }
+            g.fillStyle(0x1c0d06); g.fillRect(0, 140, 1000, 16);
+
+            // 2. VENTANA CON LLUVIAS
+            const winX = 170, winY = 22, winW = 200, winH = 105;
+
+            const maskG = scene.make.graphics({ x: 0, y: 0, add: false });
+            maskG.fillStyle(0xffffff);
+            maskG.fillRect(winX, winY, winW, winH);
+            const winMask = maskG.createGeometryMask();
+
+            g.fillStyle(0x2c3e50); g.fillRect(winX, winY, winW, winH);
+
+            windowJungleContainer = scene.add.container(0, 0);
+            const leaf1 = scene.add.graphics(); leaf1.fillStyle(0x145a32); leaf1.fillCircle(0, 0, 24); leaf1.setPosition(winX + 30, winY + 80);
+            const leaf2 = scene.add.graphics(); leaf2.fillStyle(0x1e8449); leaf2.fillCircle(0, 0, 26); leaf2.setPosition(winX + 170, winY + 76);
+            const leaf3 = scene.add.graphics(); leaf3.fillStyle(0x117a65); leaf3.fillCircle(0, 0, 30); leaf3.setPosition(winX + 100, winY + 84);
+            windowJungleContainer.add([leaf1, leaf2, leaf3]);
+            windowJungleContainer.leaf1 = leaf1; windowJungleContainer.leaf2 = leaf2; windowJungleContainer.leaf3 = leaf3;
+            windowJungleContainer.setMask(winMask);
+            windowJungleContainer.depth = 5;
+
+            rainWindowGraphics = scene.add.graphics();
+            rainWindowGraphics.setMask(winMask);
+            rainWindowGraphics.depth = 6;
+
+            // Marco Ventana
+            g.fillStyle(0x1a0f07);
+            g.fillRect(winX - 8, winY - 8, winW + 16, 8);
+            g.fillRect(winX - 8, winY + winH, winW + 16, 10);
+            g.fillRect(winX - 8, winY - 8, 8, winH + 18);
+            g.fillRect(winX + winW, winY - 8, 8, winH + 18);
+
+            g.fillStyle(0x5c3a21);
+            g.fillRect(winX + (winW / 2) - 3, winY, 6, winH);
+            g.fillRect(winX, winY + (winH / 2) - 3, winW, 6);
+
+            g.fillStyle(0xffffff, 0.16);
+            g.fillTriangle(winX + 15, winY + 6, winX + 65, winY + 6, winX + 6, winY + 50);
+
+            // MEJORA 1: Rayos de luz con BlendMode ADD
+            const sunbeam = scene.add.graphics();
+            sunbeam.fillStyle(0xffbe76, 0.25);
+            sunbeam.fillTriangle(winX + 10, winY + winH, winX + winW - 10, winY + winH, winX + winW + 180, 480);
+            sunbeam.fillTriangle(winX + 10, winY + winH, winX + winW + 180, 480, winX + 40, 480);
+            sunbeam.setBlendMode(Phaser.BlendModes.ADD);
+            sunbeam.depth = 120;
+
+            // 3. PISO RÚSTICO
+            const plankHeight = 28;
+            let alt = false;
+            for(let y = 156; y < 700; y += plankHeight) {
+                g.fillStyle(alt ? 0x854f27 : 0x73431f);
+                g.fillRect(0, y, 1000, plankHeight - 2);
+                g.fillStyle(0x381e0b);
+                g.fillRect(0, y + plankHeight - 2, 1000, 2);
+
+                g.fillStyle(0x211105);
+                for(let x = (alt ? 40 : 90); x < 1000; x += 150) {
+                    g.fillRect(x, y + 4, 3, 3);
+                    g.fillRect(x, y + plankHeight - 7, 3, 3);
+                }
+                alt = !alt;
+            }
+
+            // 4. BANDERA Y RELOJ
+            const flagX = 720, flagY = 28;
+            g.fillStyle(0x1a0f07); g.fillRect(flagX - 5, flagY - 5, 82, 58);
+            g.fillStyle(0x002b7f); g.fillRect(flagX, flagY, 72, 9);
+            g.fillStyle(0xffffff); g.fillRect(flagX, flagY + 9, 72, 9);
+            g.fillStyle(0xce1126); g.fillRect(flagX, flagY + 18, 72, 18);
+            g.fillStyle(0xffffff); g.fillRect(flagX, flagY + 36, 72, 9);
+            g.fillStyle(0x002b7f); g.fillRect(flagX, flagY + 45, 72, 9);
+            g.fillStyle(0xf1c40f); g.fillCircle(flagX + 22, flagY + 27, 4);
+
+            const clkX = 920, clkY = 32;
+            g.fillStyle(0x2b1d14); g.fillRect(clkX - 15, clkY - 6, 30, 38);
+            g.fillStyle(0xffffff); g.fillCircle(clkX, clkY + 6, 10);
+            g.fillStyle(0x000000); g.fillRect(clkX, clkY + 2, 2, 5); g.fillRect(clkX, clkY + 6, 4, 2);
+            
+            clockPendulumContainer = scene.add.container(clkX, clkY + 6);
+            const pGfx = scene.add.graphics();
+            pGfx.lineStyle(2, 0xdfe6e9, 0.9);
+            pGfx.lineBetween(0, 0, 0, 18);
+            pGfx.fillStyle(0xf1c40f, 1);
+            pGfx.fillCircle(0, 18, 4);
+            clockPendulumContainer.add(pGfx);
+            clockPendulumContainer.depth = 122;
+
+            // 5. FAROLES Y LUZ (Brillo Additive)
+            drawLantern(g, 110, 60);
+            drawLantern(g, 890, 60);
+            lanternGlowGraphics = scene.add.graphics();
+            lanternGlowGraphics.fillStyle(0xffaa00, 0.45);
+            lanternGlowGraphics.fillCircle(110, 60, 65);
+            lanternGlowGraphics.fillCircle(890, 60, 65);
+            lanternGlowGraphics.setBlendMode(Phaser.BlendModes.ADD);
+            lanternGlowGraphics.depth = 124;
+
+            // 6. CHIMENEA Y POSTE
+            const fcX = 450, fcY = 32;
+            g.fillStyle(0x4a4a4a); g.fillRect(fcX, fcY, 100, 108);
+            
+            g.fillStyle(0x333333);
+            for(let py = fcY + 4; py < fcY + 100; py += 12) {
+                for(let px = fcX + 4; px < fcX + 90; px += 18) {
+                    g.fillRect(px, py, 16, 10);
+                }
+            }
+
+            g.fillStyle(0x111111); g.fillRect(fcX + 20, fcY + 42, 60, 60);
+            g.fillStyle(0x6e3c1b); g.fillRect(fcX + 26, fcY + 86, 48, 12);
+            g.fillStyle(0xe74c3c); g.fillRect(fcX + 34, fcY + 68, 32, 22);
+            g.fillStyle(0xe67e22); g.fillRect(fcX + 38, fcY + 60, 24, 22);
+            g.fillStyle(0xf1c40f); g.fillRect(fcX + 44, fcY + 54, 12, 22);
+
+            g.fillStyle(0x5c3a21); g.fillRect(fcX + 8, fcY - 14, 84, 18);
+            g.fillStyle(0x3e2312); g.fillRect(fcX + 12, fcY - 11, 76, 14);
+            scene.add.text(fcX + 50, fcY - 4, 'PURA VIDA', {
+                fontSize: '8px', fill: '#f1c40f', fontFamily: 'Silkscreen'
+            }).setOrigin(0.5, 0.5);
+
+            g.fillStyle(0x27140a); g.fillRect(575, 0, 20, 140);
+            g.fillStyle(0x4a2b18); g.fillRect(578, 0, 14, 140);
+
+            // Perezoso
+            const slothBase = scene.add.graphics();
+            slothBase.fillStyle(0x8d5b28); slothBase.fillCircle(610, 72, 14); slothBase.fillCircle(608, 90, 18);
+            slothBase.fillStyle(0xe5c39e); slothBase.fillCircle(610, 72, 9);
+            slothBase.fillStyle(0x4a2c11); slothBase.fillRect(603, 70, 5, 3); slothBase.fillRect(612, 70, 5, 3);
+            slothBase.fillStyle(0x000000); slothBase.fillRect(608, 73, 3, 2);
+            slothBase.depth = 123;
+
+            slothEyeGraphics = scene.add.graphics();
+            slothEyeGraphics.depth = 123;
+
+            slothArmGraphics = scene.add.graphics();
+            slothArmGraphics.fillStyle(0x6e431a); slothArmGraphics.fillRect(592, 60, 16, 6); slothArmGraphics.fillRect(592, 85, 16, 6);
+            slothArmGraphics.fillStyle(0xd5dbdb); slothArmGraphics.fillRect(589, 60, 4, 6); slothArmGraphics.fillRect(589, 85, 4, 6);
+            slothArmGraphics.depth = 123;
+
+            // MEJORA 1: Resplandor Chimenea Additive
+            fireGlowGraphics = scene.add.graphics();
+            fireGlowGraphics.fillStyle(0xff5500, 0.45);
+            fireGlowGraphics.fillCircle(500, 130, 150);
+            fireGlowGraphics.setBlendMode(Phaser.BlendModes.ADD);
+            fireGlowGraphics.depth = 125;
+
+            fireSparksGraphics = scene.add.graphics();
+            fireSparksGraphics.depth = 126;
+
+            // 7. ALFOMBRA CON PATRÓN ARTESANAL (MEJORA 2)
+            const rugG = scene.add.graphics();
+            rugG.fillStyle(0x3a1f0d); rugG.fillRoundedRect(200, 260, 600, 320, 12);
+            rugG.fillStyle(0x8e2a15); rugG.fillRoundedRect(215, 275, 570, 290, 8); 
+            rugG.fillStyle(0xc09f19); rugG.fillRect(230, 290, 540, 260);            
+            
+            const innerX = 245, innerY = 305, innerW = 510, innerH = 230;
+            rugG.fillStyle(0x5c2406); 
+            rugG.fillRect(innerX, innerY, innerW, innerH);
+
+            // Patrón de rombos artesanal
+            rugG.fillStyle(0x8e2a15);
+            for (let rx = innerX + 30; rx < innerX + innerW - 20; rx += 50) {
+                for (let ry = innerY + 30; ry < innerY + innerH - 20; ry += 50) {
+                    rugG.fillTriangle(rx, ry - 14, rx + 14, ry, rx - 14, ry);
+                    rugG.fillTriangle(rx, ry + 14, rx + 14, ry, rx - 14, ry);
+                }
+            }
+            rugG.depth = 126;
+
+            createFurniture(scene);
+
+            // MEJORA 3: VIÑETA Y TINTE LOFI
+            const vignette = scene.add.graphics();
+            vignette.fillStyle(0x000000, 0.35);
+            vignette.fillRect(0, 0, 1000, 32);       
+            vignette.fillRect(0, 668, 1000, 32);     
+            vignette.fillRect(0, 0, 32, 700);        
+            vignette.fillRect(968, 0, 32, 700);      
+
+            const warmOverlay = scene.add.graphics();
+            warmOverlay.fillStyle(0xd35400, 0.05); // Filtro de ambiente cálido
+            warmOverlay.fillRect(0, 0, 1000, 700);
+            warmOverlay.depth = 9997;
+            vignette.depth = 9998;
+        }
+
+        function drawLantern(g, x, y) {
+            g.fillStyle(0x1e272e); g.fillRect(x - 8, y - 12, 16, 22);
+            g.fillStyle(0xfdcb6e); g.fillRect(x - 5, y - 8, 10, 14);
+            g.fillStyle(0xd63031); g.fillRect(x - 3, y - 5, 6, 8);
+        }
+
+        function createFurniture(scene) {
+            const tableY = 400;
+            
+            // MEJORA 4: Sombra suave de doble capa para la mesa
+            const tableSh = scene.add.graphics();
+            tableSh.fillStyle(0x000000, 0.18);
+            tableSh.fillEllipse(670, tableY + 28, 160, 42);
+            tableSh.fillStyle(0x000000, 0.35);
+            tableSh.fillEllipse(670, tableY + 20, 130, 26);
+            tableSh.depth = tableY - 1;
+
+            const table = scene.add.graphics();
+            table.fillStyle(0x321a0c);
+            table.fillRect(615, tableY, 12, 32);
+            table.fillRect(710, tableY, 12, 32);
+            table.fillStyle(0x5c3316); table.fillRect(595, tableY - 24, 150, 40);
+            table.fillStyle(0x78431e); table.fillRect(598, tableY - 21, 144, 25);
+            
+            table.fillStyle(0x27140a); table.fillRect(625, tableY - 48, 5, 28);
+            table.fillStyle(0x27140a); table.fillRect(625, tableY - 48, 18, 5);
+            table.fillStyle(0xe0d6c8); table.fillTriangle(637, tableY - 43, 649, tableY - 43, 643, tableY - 28);
+            table.fillStyle(0x5c3a21); table.fillRect(641, tableY - 28, 4, 3);
+
+            table.fillStyle(0xd5dbdb); table.fillEllipse(658, tableY - 16, 22, 8);
+            table.fillStyle(0xffffff); table.fillRect(649, tableY - 26, 18, 11);
+            table.fillStyle(0xbdc3c7); table.fillRect(649, tableY - 17, 18, 2);
+            table.fillStyle(0x3e1f0e); table.fillRect(651, tableY - 25, 14, 4);
+            table.lineStyle(2, 0xffffff); table.strokeCircle(668, tableY - 21, 4);
+
+            table.depth = tableY;
+
+            coffeeSteamGraphics = scene.add.graphics();
+            coffeeSteamGraphics.depth = tableY + 1;
+
+            const sofaY = 380;
+
+            // MEJORA 4: Sombra suave multicapa para el sofá
+            const sofaSh = scene.add.graphics();
+            sofaSh.fillStyle(0x000000, 0.20);
+            sofaSh.fillEllipse(350, sofaY + 42, 330, 56);
+            sofaSh.fillStyle(0x000000, 0.38);
+            sofaSh.fillEllipse(350, sofaY + 34, 290, 32);
+            sofaSh.depth = sofaY - 25;
+
+            const sofa = scene.add.graphics();
+            
+            sofa.fillStyle(0x0a2914); sofa.fillRect(195, sofaY - 55, 310, 40);
+            sofa.fillStyle(0x145a32); sofa.fillRect(200, sofaY - 52, 300, 34);
+            sofa.fillStyle(0x1e8449); sofa.fillRect(205, sofaY - 52, 290, 10);
+
+            sofa.fillStyle(0x0d3b1e);
+            sofa.fillRect(298, sofaY - 50, 4, 30);
+            sofa.fillRect(398, sofaY - 50, 4, 30);
+
+            sofa.fillStyle(0x0d3b1e); sofa.fillRect(200, sofaY - 18, 300, 38);
+            
+            sofa.fillStyle(0x1e8449); sofa.fillRect(205, sofaY - 15, 92, 32);
+            sofa.fillStyle(0x27ae60); sofa.fillRect(207, sofaY - 13, 88, 12);
+            sofa.fillStyle(0x1e8449); sofa.fillRect(304, sofaY - 15, 92, 32);
+            sofa.fillStyle(0x27ae60); sofa.fillRect(306, sofaY - 13, 88, 12);
+            sofa.fillStyle(0x1e8449); sofa.fillRect(403, sofaY - 15, 92, 32);
+            sofa.fillStyle(0x27ae60); sofa.fillRect(405, sofaY - 13, 88, 12);
+
+            sofa.fillStyle(0x0e3a1f); sofa.fillRect(175, sofaY - 48, 28, 68);
+            sofa.fillStyle(0x117a65); sofa.fillRect(178, sofaY - 45, 22, 62);
+            sofa.fillStyle(0x1abc9c); sofa.fillRect(180, sofaY - 45, 18, 10);
+
+            sofa.fillStyle(0x0e3a1f); sofa.fillRect(497, sofaY - 48, 28, 68);
+            sofa.fillStyle(0x117a65); sofa.fillRect(500, sofaY - 45, 22, 62);
+            sofa.fillStyle(0x1abc9c); sofa.fillRect(502, sofaY - 45, 18, 10);
+
+            sofa.depth = sofaY - 10;
+
+            createPlant(scene, 90, 180);
+            createPlant(scene, 910, 180);
+        }
+
+        // MEJORA 5: Plantas con detalles visuales
+        function createPlant(scene, x, y) {
+            const sh = scene.add.graphics();
+            sh.fillStyle(0x000000, 0.38);
+            sh.fillEllipse(x, y + 30, 48, 18);
+            sh.depth = y - 1;
+
+            const plant = scene.add.graphics();
+            // Maceta con relieves
+            plant.fillStyle(0x6e3107); plant.fillRect(x - 18, y, 36, 34);
+            plant.fillStyle(0x8a3e0b); plant.fillRect(x - 18, y, 18, 34);
+            plant.fillStyle(0xb85b14); plant.fillRect(x - 21, y - 6, 42, 8);
+            
+            // Hojas con nervaduras y brillo
+            drawLeaf(plant, x - 15, y - 25, 20, 0x117a65);
+            drawLeaf(plant, x + 15, y - 25, 22, 0x1e8449);
+            drawLeaf(plant, x, y - 38, 24, 0x2ecc71);
+            drawLeaf(plant, x - 25, y - 10, 18, 0x145a32);
+            drawLeaf(plant, x + 25, y - 10, 18, 0x27ae60);
+
+            plant.depth = y;
+        }
+
+        function drawLeaf(g, x, y, radius, color) {
+            g.fillStyle(color);
+            g.fillCircle(x, y, radius);
+            // Sombra interna
+            g.fillStyle(0x082b14, 0.35);
+            g.fillRect(x - 1, y - radius + 3, 3, radius * 1.6);
+            // Destello
+            g.fillStyle(0xffffff, 0.15);
+            g.fillCircle(x - radius / 3, y - radius / 3, radius / 3);
+        }
+
+        function createDustParticles(scene) {
+            for(let i = 0; i < 28; i++) {
+                const gfx = scene.add.graphics();
+                gfx.depth = 9996;
+
+                const baseSize = Phaser.Math.Between(1, 3);
+                const p = {
+                    gfx: gfx,
+                    x: Phaser.Math.Between(60, 940),
+                    y: Phaser.Math.Between(140, 660),
+                    speedY: Phaser.Math.FloatBetween(0.12, 0.35),
+                    seed: Math.random() * 100,
+                    baseSize: baseSize
+                };
+                dustParticles.push(p);
+            }
+        }
+
+        // --- AUDIO DE LLUVIA SINTETIZADO ---
+        function initRainAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const bufferSize = audioContext.sampleRate * 2;
+                const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * 0.015;
+                }
+
+                rainNoiseNode = audioContext.createBufferSource();
+                rainNoiseNode.buffer = noiseBuffer;
+                rainNoiseNode.loop = true;
+
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 550;
+
+                rainNoiseNode.connect(filter);
+                filter.connect(audioContext.destination);
+                rainNoiseNode.start();
+                isAudioPlaying = true;
+            } catch(e) {
+                console.log("Audio no disponible");
+            }
+        }
+
+        async function toggleAudio() {
+            if (!audioContext) return;
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+                isAudioPlaying = true;
+                document.getElementById('audio-toggle-btn').innerText = '🌧️';
+            } else if (audioContext.state === 'running') {
+                await audioContext.suspend();
+                isAudioPlaying = false;
+                document.getElementById('audio-toggle-btn').innerText = '🔇';
+            }
+        }
+
+        function toggleHistory() {
+            const box = document.getElementById('chat-history-box');
+            box.style.display = (box.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function addHistoryLog(name, message) {
+            const list = document.getElementById('chat-history-list');
+            const item = document.createElement('div');
+            
+            const nameEl = document.createElement('b');
+            nameEl.style.color = '#2ecc71';
+            nameEl.textContent = `${name}: `;
+            
+            const msgEl = document.createElement('span');
+            msgEl.textContent = message;
+
+            item.appendChild(nameEl);
+            item.appendChild(msgEl);
+            list.appendChild(item);
+            list.scrollTop = list.scrollHeight;
         }
     </script>
 </body>

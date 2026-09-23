@@ -106,7 +106,7 @@
             color: #140d08;
         }
 
-        /* BARRA INFERIOR - MEJORADA CON ESTILO RETRO BLOCK */
+        /* BARRA INFERIOR - RETRO BLOCK */
         #ui-bar {
             position: absolute;
             bottom: 14px;
@@ -304,26 +304,18 @@
                 const g = this.make.graphics({ x: 0, y: 0, add: false });
                 const colors = COLOR_MAP[colorKey];
                 
-                // Pelo
                 g.fillStyle(0x4a235a); g.fillRect(10, 2, 12, 6);
-                
-                // Piel
                 g.fillStyle(0xffdbac); g.fillRect(10, 7, 12, 9);
                 g.fillStyle(0xe0ac69); g.fillRect(10, 14, 12, 2);
                 g.fillStyle(0x2c3e50); g.fillRect(12, 10, 2, 3); g.fillRect(18, 10, 2, 3);
-                
-                // Túnica
                 g.fillStyle(colors.base); g.fillRect(8, 16, 16, 10);
                 g.fillStyle(colors.shadow); g.fillRect(18, 16, 6, 10); g.fillRect(8, 24, 16, 2);
-                
-                // Pantalones y Botas
                 g.fillStyle(0x2c3e50); g.fillRect(10, 26, 12, 5);
                 g.fillStyle(0x1a100b); g.fillRect(9, 29, 5, 3); g.fillRect(18, 29, 5, 3);
 
                 g.generateTexture(`human_${colorKey}`, 32, 32);
             });
 
-            // Sombra ovalada
             const shG = this.make.graphics({ x: 0, y: 0, add: false });
             shG.fillStyle(0x000000, 0.38);
             shG.fillEllipse(18, 9, 18, 7);
@@ -333,7 +325,6 @@
         function create() {
             const self = this;
 
-            // Gotas de Lluvia
             for (let i = 0; i < 40; i++) {
                 rainParticles.push({
                     x: Phaser.Math.Between(170, 370),
@@ -343,7 +334,6 @@
                 });
             }
 
-            // Chispas Chimenea
             for (let i = 0; i < 14; i++) {
                 fireSparks.push({
                     x: 500 + Phaser.Math.Between(-14, 14),
@@ -355,7 +345,6 @@
                 });
             }
 
-            // Vapor Café
             for (let i = 0; i < 6; i++) {
                 coffeeSteam.push({
                     x: 658,
@@ -367,21 +356,43 @@
 
             drawCostaRicaCabin(this);
 
-            // EVENTOS DE ENTRADA / LOGIN
             const startBtn = document.getElementById('start-btn');
             const usernameInput = document.getElementById('username-input');
 
+            // MANEJO INTELIGENTE DE CONEXIÓN CON RESPALDO
             const handleLogin = () => {
-                if (socket) return;
+                if (player) return;
                 const name = usernameInput.value.trim() || 'Tico';
                 const color = document.getElementById('color-select').value;
                 
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('ui-bar').style.display = 'flex';
 
-                socket = io();
-                setupSocketListeners(self);
-                socket.emit('joinRoom', { name, color });
+                let hasServerConnected = false;
+
+                if (typeof io !== 'undefined') {
+                    try {
+                        socket = io({ timeout: 1500, reconnectionAttempts: 1 });
+                        setupSocketListeners(self);
+
+                        socket.on('connect', () => {
+                            hasServerConnected = true;
+                            socket.emit('joinRoom', { name, color });
+                        });
+
+                        // Si en 1 segundo no responde un servidor de Node.js, activar jugador local automáticamente
+                        setTimeout(() => {
+                            if (!hasServerConnected && !player) {
+                                addLocalPlayer(self, { x: 500, y: 380, name: name, color: color });
+                            }
+                        }, 1000);
+                    } catch (e) {
+                        addLocalPlayer(self, { x: 500, y: 380, name: name, color: color });
+                    }
+                } else {
+                    addLocalPlayer(self, { x: 500, y: 380, name: name, color: color });
+                }
+
                 initRainAudio();
             };
 
@@ -390,7 +401,7 @@
                 if (e.key === 'Enter') handleLogin();
             });
 
-            // CLIC Y MECÁNICA PARA SENTARSE
+            // CLIC Y MOVIMIENTO HACIA EL SOFÁ O ESCENARIO
             this.input.on('pointerdown', (pointer) => {
                 if (pointer.y > 620 || pointer.y < 140) return;
 
@@ -409,7 +420,10 @@
                     targetPoint.x = targetX;
                     targetPoint.y = targetY;
                     self.physics.moveToObject(player, targetPoint, SPEED);
-                    socket.emit('playerMovement', { x: targetX, y: targetY });
+
+                    if (socket && socket.connected) {
+                        socket.emit('playerMovement', { x: targetX, y: targetY });
+                    }
                     player.setScale(2.6, 2.0);
                 }
             });
@@ -417,20 +431,25 @@
             const chatInput = document.getElementById('chat-input');
             
             chatInput.addEventListener('focus', () => {
-                if (socket) socket.emit('typingState', true);
-                if (socket) setTypingIndicator(self, socket.id, true);
+                if (socket && socket.connected) socket.emit('typingState', true);
+                setTypingIndicator(self, 'local', true);
             });
 
             chatInput.addEventListener('blur', () => {
-                if (socket) socket.emit('typingState', false);
-                if (socket) setTypingIndicator(self, socket.id, false);
+                if (socket && socket.connected) socket.emit('typingState', false);
+                setTypingIndicator(self, 'local', false);
             });
 
             chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const msg = chatInput.value.trim();
-                    if (msg.length > 0 && socket) {
-                        socket.emit('chatMessage', msg);
+                    if (msg.length > 0) {
+                        if (socket && socket.connected) {
+                            socket.emit('chatMessage', msg);
+                        } else if (player) {
+                            showSpeechBubble(self, 'local', msg);
+                            addHistoryLog(player.nameTag.text, msg);
+                        }
                         chatInput.value = '';
                         chatInput.blur();
                     }
@@ -451,7 +470,7 @@
             socket.on('currentPlayers', (players) => {
                 Object.keys(players).forEach((id) => {
                     if (players[id].playerId === socket.id) {
-                        addLocalPlayer(scene, players[id]);
+                        if (!player) addLocalPlayer(scene, players[id]);
                     } else {
                         addOtherPlayer(scene, players[id]);
                     }
@@ -499,7 +518,6 @@
             const time = this.time.now;
             const winX = 170, winY = 22, winW = 200, winH = 105;
 
-            // 1. LLUVIA ANIMADA
             if (rainWindowGraphics) {
                 rainWindowGraphics.clear();
                 rainWindowGraphics.lineStyle(1.5, 0xdfe6e9, 0.65);
@@ -514,7 +532,6 @@
                 });
             }
 
-            // 2. SELVA TROPICAL
             if (windowJungleContainer) {
                 const sway1 = Math.sin(time / 600) * 3;
                 const sway2 = Math.cos(time / 500) * 2.5;
@@ -523,7 +540,6 @@
                 if (windowJungleContainer.leaf3) windowJungleContainer.leaf3.x = winX + 100 + sway1 * 0.5;
             }
 
-            // 3. CHISPAS CHIMENEA
             if (fireSparksGraphics) {
                 fireSparksGraphics.clear();
                 fireSparks.forEach(s => {
@@ -541,7 +557,6 @@
                 });
             }
 
-            // 4. VAPOR CAFÉ
             if (coffeeSteamGraphics) {
                 coffeeSteamGraphics.clear();
                 coffeeSteam.forEach(p => {
@@ -558,7 +573,6 @@
                 });
             }
 
-            // 5. PEREZOSO ANIMADO
             if (slothArmGraphics && slothEyeGraphics) {
                 const blink = Math.sin(time / 900) > 0.95;
                 const armMove = Math.sin(time / 500) * 1.5;
@@ -569,7 +583,6 @@
                 slothEyeGraphics.fillRect(613, 70, 2, 2);
             }
 
-            // 6. LUZ Y PARPADEOS (Con soporte para Additive Blend)
             if (fireGlowGraphics) {
                 fireGlowGraphics.alpha = 0.4 + Math.sin(time / 80) * 0.12 + (Math.random() * 0.04);
             }
@@ -578,12 +591,10 @@
                 lanternGlowGraphics.alpha = 0.35 + Math.sin(time / 90) * 0.08;
             }
 
-            // 7. RELOJ DE PÉNDULO
             if (clockPendulumContainer) {
                 clockPendulumContainer.rotation = Math.sin(time / 220) * 0.25;
             }
 
-            // MOVIMIENTO Y PROFUNDIDAD DEL JUGADOR
             if (player && targetPoint) {
                 const dist = Phaser.Math.Distance.Between(player.x, player.y, targetPoint.x, targetPoint.y);
                 
@@ -624,7 +635,6 @@
                 }
             }
 
-            // OTROS JUGADORES
             Object.keys(otherPlayers).forEach((id) => {
                 const other = otherPlayers[id];
                 if (other.targetPoint) {
@@ -651,7 +661,6 @@
                 }
             });
 
-            // POLVO AMBIENTAL
             dustParticles.forEach(p => {
                 p.y -= p.speedY;
                 p.x += Math.sin(time / 500 + p.seed) * 0.35;
@@ -718,7 +727,13 @@
         }
 
         function sendEmote(symbol) {
-            if (socket) socket.emit('emoteMessage', symbol);
+            if (socket && socket.connected) {
+                socket.emit('emoteMessage', symbol);
+            } else if (player) {
+                const scene = game.scene.scenes[0];
+                showEmoteBubble(scene, 'local', symbol);
+                addHistoryLog(player.nameTag.text, symbol);
+            }
         }
 
         function spawnFootstepDust(scene, x, y) {
@@ -731,7 +746,7 @@
         }
 
         function setTypingIndicator(scene, playerId, isTyping) {
-            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            const char = (playerId === 'local' || (socket && playerId === socket.id)) ? player : otherPlayers[playerId];
             if (!char) return;
 
             if (isTyping) {
@@ -774,7 +789,7 @@
         }
 
         function showSpeechBubble(scene, playerId, text) {
-            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            const char = (playerId === 'local' || (socket && playerId === socket.id)) ? player : otherPlayers[playerId];
             if (!char) return;
 
             removeCharacterBubbles(char);
@@ -805,7 +820,7 @@
         }
 
         function showEmoteBubble(scene, playerId, emote) {
-            const char = (socket && playerId === socket.id) ? player : otherPlayers[playerId];
+            const char = (playerId === 'local' || (socket && playerId === socket.id)) ? player : otherPlayers[playerId];
             if (!char) return;
 
             removeCharacterBubbles(char);
@@ -830,11 +845,9 @@
             });
         }
 
-        // --- DIBUJO DE CABAÑA Y MUEBLES 2.5D ---
         function drawCostaRicaCabin(scene) {
             const g = scene.add.graphics();
 
-            // 1. PARED DE TRONCOS
             g.fillStyle(0x3a2012); g.fillRect(0, 0, 1000, 140);
             for(let y = 0; y < 140; y += 18) {
                 g.fillStyle(0x4a2b18); g.fillRect(0, y + 2, 1000, 12);
@@ -843,7 +856,6 @@
             }
             g.fillStyle(0x1c0d06); g.fillRect(0, 140, 1000, 16);
 
-            // 2. VENTANA CON LLUVIAS
             const winX = 170, winY = 22, winW = 200, winH = 105;
 
             const maskG = scene.make.graphics({ x: 0, y: 0, add: false });
@@ -866,7 +878,6 @@
             rainWindowGraphics.setMask(winMask);
             rainWindowGraphics.depth = 6;
 
-            // Marco Ventana
             g.fillStyle(0x1a0f07);
             g.fillRect(winX - 8, winY - 8, winW + 16, 8);
             g.fillRect(winX - 8, winY + winH, winW + 16, 10);
@@ -880,7 +891,6 @@
             g.fillStyle(0xffffff, 0.16);
             g.fillTriangle(winX + 15, winY + 6, winX + 65, winY + 6, winX + 6, winY + 50);
 
-            // MEJORA 1: Rayos de luz con BlendMode ADD
             const sunbeam = scene.add.graphics();
             sunbeam.fillStyle(0xffbe76, 0.25);
             sunbeam.fillTriangle(winX + 10, winY + winH, winX + winW - 10, winY + winH, winX + winW + 180, 480);
@@ -888,7 +898,6 @@
             sunbeam.setBlendMode(Phaser.BlendModes.ADD);
             sunbeam.depth = 120;
 
-            // 3. PISO RÚSTICO
             const plankHeight = 28;
             let alt = false;
             for(let y = 156; y < 700; y += plankHeight) {
@@ -905,7 +914,6 @@
                 alt = !alt;
             }
 
-            // 4. BANDERA Y RELOJ
             const flagX = 720, flagY = 28;
             g.fillStyle(0x1a0f07); g.fillRect(flagX - 5, flagY - 5, 82, 58);
             g.fillStyle(0x002b7f); g.fillRect(flagX, flagY, 72, 9);
@@ -929,7 +937,6 @@
             clockPendulumContainer.add(pGfx);
             clockPendulumContainer.depth = 122;
 
-            // 5. FAROLES Y LUZ (Brillo Additive)
             drawLantern(g, 110, 60);
             drawLantern(g, 890, 60);
             lanternGlowGraphics = scene.add.graphics();
@@ -939,7 +946,6 @@
             lanternGlowGraphics.setBlendMode(Phaser.BlendModes.ADD);
             lanternGlowGraphics.depth = 124;
 
-            // 6. CHIMENEA Y POSTE
             const fcX = 450, fcY = 32;
             g.fillStyle(0x4a4a4a); g.fillRect(fcX, fcY, 100, 108);
             
@@ -965,7 +971,6 @@
             g.fillStyle(0x27140a); g.fillRect(575, 0, 20, 140);
             g.fillStyle(0x4a2b18); g.fillRect(578, 0, 14, 140);
 
-            // Perezoso
             const slothBase = scene.add.graphics();
             slothBase.fillStyle(0x8d5b28); slothBase.fillCircle(610, 72, 14); slothBase.fillCircle(608, 90, 18);
             slothBase.fillStyle(0xe5c39e); slothBase.fillCircle(610, 72, 9);
@@ -981,7 +986,6 @@
             slothArmGraphics.fillStyle(0xd5dbdb); slothArmGraphics.fillRect(589, 60, 4, 6); slothArmGraphics.fillRect(589, 85, 4, 6);
             slothArmGraphics.depth = 123;
 
-            // MEJORA 1: Resplandor Chimenea Additive
             fireGlowGraphics = scene.add.graphics();
             fireGlowGraphics.fillStyle(0xff5500, 0.45);
             fireGlowGraphics.fillCircle(500, 130, 150);
@@ -991,7 +995,6 @@
             fireSparksGraphics = scene.add.graphics();
             fireSparksGraphics.depth = 126;
 
-            // 7. ALFOMBRA CON PATRÓN ARTESANAL (MEJORA 2)
             const rugG = scene.add.graphics();
             rugG.fillStyle(0x3a1f0d); rugG.fillRoundedRect(200, 260, 600, 320, 12);
             rugG.fillStyle(0x8e2a15); rugG.fillRoundedRect(215, 275, 570, 290, 8); 
@@ -1001,7 +1004,6 @@
             rugG.fillStyle(0x5c2406); 
             rugG.fillRect(innerX, innerY, innerW, innerH);
 
-            // Patrón de rombos artesanal
             rugG.fillStyle(0x8e2a15);
             for (let rx = innerX + 30; rx < innerX + innerW - 20; rx += 50) {
                 for (let ry = innerY + 30; ry < innerY + innerH - 20; ry += 50) {
@@ -1013,7 +1015,6 @@
 
             createFurniture(scene);
 
-            // MEJORA 3: VIÑETA Y TINTE LOFI
             const vignette = scene.add.graphics();
             vignette.fillStyle(0x000000, 0.35);
             vignette.fillRect(0, 0, 1000, 32);       
@@ -1022,7 +1023,7 @@
             vignette.fillRect(968, 0, 32, 700);      
 
             const warmOverlay = scene.add.graphics();
-            warmOverlay.fillStyle(0xd35400, 0.05); // Filtro de ambiente cálido
+            warmOverlay.fillStyle(0xd35400, 0.05);
             warmOverlay.fillRect(0, 0, 1000, 700);
             warmOverlay.depth = 9997;
             vignette.depth = 9998;
@@ -1037,7 +1038,6 @@
         function createFurniture(scene) {
             const tableY = 400;
             
-            // MEJORA 4: Sombra suave de doble capa para la mesa
             const tableSh = scene.add.graphics();
             tableSh.fillStyle(0x000000, 0.18);
             tableSh.fillEllipse(670, tableY + 28, 160, 42);
@@ -1070,7 +1070,6 @@
 
             const sofaY = 380;
 
-            // MEJORA 4: Sombra suave multicapa para el sofá
             const sofaSh = scene.add.graphics();
             sofaSh.fillStyle(0x000000, 0.20);
             sofaSh.fillEllipse(350, sofaY + 42, 330, 56);
@@ -1111,7 +1110,6 @@
             createPlant(scene, 910, 180);
         }
 
-        // MEJORA 5: Plantas con detalles visuales
         function createPlant(scene, x, y) {
             const sh = scene.add.graphics();
             sh.fillStyle(0x000000, 0.38);
@@ -1119,12 +1117,10 @@
             sh.depth = y - 1;
 
             const plant = scene.add.graphics();
-            // Maceta con relieves
             plant.fillStyle(0x6e3107); plant.fillRect(x - 18, y, 36, 34);
             plant.fillStyle(0x8a3e0b); plant.fillRect(x - 18, y, 18, 34);
             plant.fillStyle(0xb85b14); plant.fillRect(x - 21, y - 6, 42, 8);
             
-            // Hojas con nervaduras y brillo
             drawLeaf(plant, x - 15, y - 25, 20, 0x117a65);
             drawLeaf(plant, x + 15, y - 25, 22, 0x1e8449);
             drawLeaf(plant, x, y - 38, 24, 0x2ecc71);
@@ -1137,10 +1133,8 @@
         function drawLeaf(g, x, y, radius, color) {
             g.fillStyle(color);
             g.fillCircle(x, y, radius);
-            // Sombra interna
             g.fillStyle(0x082b14, 0.35);
             g.fillRect(x - 1, y - radius + 3, 3, radius * 1.6);
-            // Destello
             g.fillStyle(0xffffff, 0.15);
             g.fillCircle(x - radius / 3, y - radius / 3, radius / 3);
         }
@@ -1163,7 +1157,6 @@
             }
         }
 
-        // --- AUDIO DE LLUVIA SINTETIZADO ---
         function initRainAudio() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
